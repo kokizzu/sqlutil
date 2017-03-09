@@ -29,7 +29,7 @@ func CreateTable(db *sql.DB, model interface{}) error {
 	}
 
 	definitions = append(definitions, fmt.Sprintf(" CONSTRAINT %s_pk PRIMARY KEY(%s)", tableName, strings.Join(schema.PrimaryKey, Separator)))
-	statement := fmt.Sprintf("CREATE TABLE %s (\n%s\n)", tableName, strings.Join(definitions, Separator))
+	statement := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n%s\n)", tableName, strings.Join(definitions, Separator))
 
 	if _, err = db.Exec(statement); err != nil {
 		return err
