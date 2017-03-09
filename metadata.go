@@ -54,6 +54,7 @@ type Schema struct {
 
 type Column struct {
 	Name       string
+	Index      int
 	DataType   string
 	Constraint ColumnConstraint
 }
@@ -98,7 +99,9 @@ func (m *Metadata) Schema(t reflect.Type) (*Schema, error) {
 			return nil, fmt.Errorf("Missing tag for field %q in type %q", field.Name, t.Name())
 		}
 
-		column := &Column{}
+		column := &Column{
+			Index: i,
+		}
 		hasPrimaryKey := false
 
 		for index, meta := range strings.Split(tag, ",") {
@@ -177,4 +180,9 @@ func typeOf(m interface{}) (reflect.Type, error) {
 	}
 
 	return t.Elem(), nil
+}
+
+func valueOf(m interface{}) reflect.Value {
+	v := reflect.ValueOf(m)
+	return v.Elem()
 }
