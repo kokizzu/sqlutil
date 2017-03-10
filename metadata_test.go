@@ -34,6 +34,7 @@ var _ = Describe("Metadata", func() {
 		t := reflect.ValueOf(m{}).Type()
 		schema, err := metadata.Schema(t)
 		Expect(err).To(BeNil())
+		Expect(schema.Table).To(Equal("m"))
 
 		columns := schema.Columns
 		Expect(columns).To(HaveLen(4))

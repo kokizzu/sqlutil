@@ -20,7 +20,6 @@ func CreateTable(db *sql.DB, model interface{}) error {
 	}
 
 	definitions := []string{}
-	tableName := strings.ToLower(t.Name())
 	tablePK := []string{}
 
 	for _, column := range schema.Columns {
@@ -32,15 +31,15 @@ func CreateTable(db *sql.DB, model interface{}) error {
 		}
 	}
 
-	definitions = append(definitions, fmt.Sprintf(" CONSTRAINT %s_pk PRIMARY KEY(%s)", tableName, strings.Join(tablePK, Separator)))
-	statement := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n%s\n)", tableName, strings.Join(definitions, Separator))
+	definitions = append(definitions, fmt.Sprintf(" CONSTRAINT %s_pk PRIMARY KEY(%s)", schema.Table, strings.Join(tablePK, Separator)))
+	statement := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n%s\n)", schema.Table, strings.Join(definitions, Separator))
 
 	if _, err = db.Exec(statement); err != nil {
 		return err
 	}
 
 	for _, index := range schema.Indexes {
-		statement := fmt.Sprintf("CREATE INDEX %s ON %s (%s)", index.Name, tableName, strings.Join(index.Columns, ","))
+		statement := fmt.Sprintf("CREATE INDEX %s ON %s (%s)", index.Name, schema.Table, strings.Join(index.Columns, ","))
 		if _, err := db.Exec(statement); err != nil {
 			return err
 		}

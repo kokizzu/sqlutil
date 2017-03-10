@@ -50,6 +50,7 @@ const (
 )
 
 type Schema struct {
+	Table   string
 	Columns []*Column
 	Indexes []*Index
 }
@@ -81,6 +82,7 @@ func (m *Metadata) Schema(t reflect.Type) (*Schema, error) {
 	}
 
 	schema = &Schema{
+		Table:   strings.ToLower(t.Name()),
 		Columns: []*Column{},
 		Indexes: []*Index{},
 	}
