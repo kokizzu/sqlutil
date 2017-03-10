@@ -37,7 +37,7 @@ var _ = Describe("Crud", func() {
 			Name: "Jack",
 		})).To(Succeed())
 
-		rows, err := db.Query("SELECT id,name,name as full FROM student")
+		rows, err := db.Query("SELECT id,name FROM student")
 		Expect(err).To(BeNil())
 		defer rows.Close()
 
@@ -48,5 +48,29 @@ var _ = Describe("Crud", func() {
 		Expect(sqlutil.Scan(rows, &record)).To(Succeed())
 		Expect(record.ID).To(Equal("1234"))
 		Expect(record.Name).To(Equal("Jack"))
+	})
+
+	It("updates row correctly", func() {
+		Expect(sqlutil.Insert(db, &student{
+			ID:   "1234",
+			Name: "Jack",
+		})).To(Succeed())
+
+		Expect(sqlutil.Update(db, &student{
+			ID:   "1234",
+			Name: "John",
+		})).To(Succeed())
+
+		rows, err := db.Query("SELECT id,name FROM student")
+		Expect(err).To(BeNil())
+		defer rows.Close()
+
+		Expect(rows.Next()).To(BeTrue())
+
+		record := student{}
+
+		Expect(sqlutil.Scan(rows, &record)).To(Succeed())
+		Expect(record.ID).To(Equal("1234"))
+		Expect(record.Name).To(Equal("John"))
 	})
 })
