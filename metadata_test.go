@@ -24,10 +24,10 @@ var _ = Describe("Metadata", func() {
 
 	It("retrieves the fields information", func() {
 		type m struct {
-			ID        string    `sql:"id,varchar(50),pk,not_null,unique,index:search"`
-			Name      string    `sql:"name,text,not_null,unique,index"`
+			ID        string    `sql:"id,varchar(50),pk,not_null,unique" sqlindex:"search"`
+			Name      string    `sql:"name,text,not_null,unique" sqlindex:"name_idx"`
 			CreatedAt time.Time `sql:"created_at,timestamp,null"`
-			RefId     int       `sql:"ref_id,integer,index:ref_id,index:search"`
+			RefId     int       `sql:"ref_id,integer" sqlindex:"search" sqlindex:"ref_id"`
 			IgnoreMe  string    `sql:"-"`
 		}
 
@@ -57,25 +57,22 @@ var _ = Describe("Metadata", func() {
 		Expect(columns[3].Name).To(Equal("ref_id"))
 		Expect(columns[3].DataType).To(Equal("integer"))
 
-		pk := schema.PrimaryKey
-		Expect(pk).To(HaveLen(1))
-		Expect(pk[0]).To(Equal("id"))
-
 		indexes := schema.Indexes
 		Expect(indexes).To(HaveLen(3))
 
-		Expect(indexes[0].Name).To(Equal("name_idx"))
-		Expect(indexes[0].Columns).To(HaveLen(1))
-		Expect(indexes[0].Columns).To(ContainElement("name"))
+		Expect(indexes[0].Name).To(Equal("search"))
+		Expect(indexes[0].Columns).To(HaveLen(2))
+		Expect(indexes[0].Columns).To(ContainElement("id"))
+		Expect(indexes[0].Columns).To(ContainElement("ref_id"))
 
-		Expect(indexes[1].Name).To(Equal("ref_id"))
+		Expect(indexes[1].Name).To(Equal("name_idx"))
 		Expect(indexes[1].Columns).To(HaveLen(1))
-		Expect(indexes[1].Columns).To(ContainElement("ref_id"))
+		Expect(indexes[1].Columns).To(ContainElement("name"))
 
-		Expect(indexes[2].Name).To(Equal("search"))
-		Expect(indexes[2].Columns).To(HaveLen(2))
-		Expect(indexes[2].Columns).To(ContainElement("id"))
+		Expect(indexes[2].Name).To(Equal("ref_id"))
+		Expect(indexes[2].Columns).To(HaveLen(1))
 		Expect(indexes[2].Columns).To(ContainElement("ref_id"))
+
 	})
 
 	Context("when a tag is not provided", func() {
@@ -86,7 +83,7 @@ var _ = Describe("Metadata", func() {
 
 			t := reflect.ValueOf(m{}).Type()
 			_, err := metadata.Schema(t)
-			Expect(err).To(MatchError(`Missing tag for field "ID" in type "m"`))
+			Expect(err).To(MatchError(`Type "m": Missing tag for field "ID"`))
 		})
 	})
 })

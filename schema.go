@@ -21,14 +21,18 @@ func CreateTable(db *sql.DB, model interface{}) error {
 
 	definitions := []string{}
 	tableName := strings.ToLower(t.Name())
+	tablePK := []string{}
 
 	for _, column := range schema.Columns {
-		definition := fmt.Sprintf(" %s %s %s", column.Name, column.DataType, column.Constraint.String())
-		definition = strings.TrimRight(definition, " ")
+		definition := strings.TrimRight(fmt.Sprintf(" %s %s %s", column.Name, column.DataType, column.Constraint.String()), " ")
 		definitions = append(definitions, definition)
+
+		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
+			tablePK = append(tablePK, column.Name)
+		}
 	}
 
-	definitions = append(definitions, fmt.Sprintf(" CONSTRAINT %s_pk PRIMARY KEY(%s)", tableName, strings.Join(schema.PrimaryKey, Separator)))
+	definitions = append(definitions, fmt.Sprintf(" CONSTRAINT %s_pk PRIMARY KEY(%s)", tableName, strings.Join(tablePK, Separator)))
 	statement := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n%s\n)", tableName, strings.Join(definitions, Separator))
 
 	if _, err = db.Exec(statement); err != nil {
