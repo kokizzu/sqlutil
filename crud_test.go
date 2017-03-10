@@ -73,4 +73,21 @@ var _ = Describe("Crud", func() {
 		Expect(record.ID).To(Equal("1234"))
 		Expect(record.Name).To(Equal("John"))
 	})
+
+	It("deletes row correctly", func() {
+		Expect(sqlutil.Insert(db, &student{
+			ID:   "1234",
+			Name: "Jack",
+		})).To(Succeed())
+
+		Expect(sqlutil.Delete(db, &student{
+			ID: "1234",
+		})).To(Succeed())
+
+		rows, err := db.Query("SELECT id,name FROM student")
+		Expect(err).To(BeNil())
+		defer rows.Close()
+
+		Expect(rows.Next()).To(BeFalse())
+	})
 })
