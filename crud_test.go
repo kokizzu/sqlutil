@@ -1,8 +1,6 @@
 package sqlutil_test
 
 import (
-	"database/sql"
-
 	"github.com/phogolabs/sqlutil"
 
 	. "github.com/onsi/ginkgo"
@@ -15,20 +13,13 @@ var _ = Describe("Crud", func() {
 		Name string `sql:"name,text"`
 	}
 
-	var db *sql.DB
-
 	BeforeEach(func() {
-		var err error
-		db, err = sql.Open("sqlite3", "sqlutil.db")
-		Expect(err).To(BeNil())
-
 		Expect(sqlutil.CreateTable(db, &student{})).To(Succeed())
 	})
 
 	AfterEach(func() {
 		_, err := db.Exec("drop table student")
 		Expect(err).To(BeNil())
-		Expect(db.Close()).To(Succeed())
 	})
 
 	It("inserts user correctly", func() {

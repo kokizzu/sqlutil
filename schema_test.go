@@ -1,29 +1,18 @@
 package sqlutil_test
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/phogolabs/sqlutil"
 
-	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Schema", func() {
-	var db *sql.DB
-
-	BeforeEach(func() {
-		var err error
-		db, err = sql.Open("sqlite3", "sqlutil.db")
-		Expect(err).To(BeNil())
-	})
-
 	AfterEach(func() {
 		_, err := db.Exec("drop table m")
 		Expect(err).To(BeNil())
-		Expect(db.Close()).To(Succeed())
 	})
 
 	It("creates a table successfully", func() {
