@@ -81,4 +81,18 @@ var _ = Describe("Crud", func() {
 
 		Expect(rows.Next()).To(BeFalse())
 	})
+
+	Context("when the provided type is not a pointer", func() {
+		It("insert operation returns an error", func() {
+			Expect(sqlutil.Insert(db, student{})).To(MatchError("Must be pointer to struct; got student"))
+		})
+
+		It("update operation returns an error", func() {
+			Expect(sqlutil.Update(db, student{})).To(MatchError("Must be pointer to struct; got student"))
+		})
+
+		It("delete operation returns an error", func() {
+			Expect(sqlutil.Delete(db, student{})).To(MatchError("Must be pointer to struct; got student"))
+		})
+	})
 })

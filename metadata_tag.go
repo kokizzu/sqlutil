@@ -5,15 +5,37 @@ import (
 	"strconv"
 )
 
+// A StructTag is the tag string in a struct field.
+//
+// By convention, tag strings are a concatenation of
+// optionally space-separated key:"value" pairs.
+// Each key is a non-empty string consisting of non-control
+// characters other than space (U+0020 ' '), quote (U+0022 '"'),
+// and colon (U+003A ':').  Each value is quoted using U+0022 '"'
+// characters and Go string literal syntax.
+type Tag reflect.StructTag
+
 // Get returns the value associated with key in the tag string.
 // If there is no such key in the tag, Get returns the empty string.
 // If the tag does not have the conventional format, the value
 // returned by Get is unspecified. To determine whether a tag is
 // explicitly set to the empty string, use Lookup.
-func GetAllTags(tag reflect.StructTag, key string) []string {
+func (tag Tag) Get(key string) []string {
+	v, _ := tag.Lookup(key)
+	return v
+}
+
+// Lookup returns the value associated with key in the tag string.
+// If the key is present in the tag the value (which may be empty)
+// is returned. Otherwise the returned value will be the empty string.
+// The ok return value reports whether the value was explicitly set in
+// the tag string. If the tag does not have the conventional format,
+// the value returned by Lookup is unspecified.
+func (tag Tag) Lookup(key string) ([]string, bool) {
 	// When modifying this code, also update the validateStructTag code
 	// in cmd/vet/structtag.go.
 
+	exist := false
 	values := []string{}
 
 	for tag != "" {
@@ -56,6 +78,7 @@ func GetAllTags(tag reflect.StructTag, key string) []string {
 		tag = tag[i+1:]
 
 		if key == name {
+			exist = true
 			value, err := strconv.Unquote(qvalue)
 			if err != nil {
 				break
@@ -65,5 +88,5 @@ func GetAllTags(tag reflect.StructTag, key string) []string {
 		}
 	}
 
-	return values
+	return values, exist
 }

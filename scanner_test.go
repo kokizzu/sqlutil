@@ -37,4 +37,16 @@ var _ = Describe("Scanner", func() {
 		Expect(record.ID).To(Equal("e73sg9"))
 		Expect(record.Name).To(Equal("hello"))
 	})
+
+	Context("when the provided type is not a pointer", func() {
+		It("read operation returns an error", func() {
+			rows, err := db.Query("SELECT id,name,name as full FROM student")
+			Expect(err).To(BeNil())
+			defer rows.Close()
+
+			Expect(rows.Next()).To(BeTrue())
+
+			Expect(sqlutil.Scan(rows, student{})).To(MatchError("Must be pointer to struct; got student"))
+		})
+	})
 })

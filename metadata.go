@@ -156,7 +156,9 @@ func (m *Metadata) constraints(meta string) ColumnConstraint {
 }
 
 func (m *Metadata) index(schema *Schema, column *Column, field reflect.StructField) {
-	for _, indexTag := range GetAllTags(field.Tag, TagIndexName) {
+	tag := Tag(field.Tag)
+
+	for _, indexTag := range tag.Get(TagIndexName) {
 		found := false
 
 		for _, index := range schema.Indexes {
@@ -181,7 +183,7 @@ func typeOf(m interface{}) (reflect.Type, error) {
 	t := v.Type()
 
 	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct {
-		return nil, fmt.Errorf("Must be pointer to struct; got %T", v)
+		return nil, fmt.Errorf("Must be pointer to struct; got %s", t.Name())
 	}
 
 	return t.Elem(), nil

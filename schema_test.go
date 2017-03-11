@@ -11,14 +11,13 @@ import (
 
 var _ = Describe("Schema", func() {
 	AfterEach(func() {
-		_, err := db.Exec("drop table m")
-		Expect(err).To(BeNil())
+		db.Exec("drop table m")
 	})
 
 	It("creates a table successfully", func() {
 		type m struct {
 			ID        string    `sql:"id,varchar(50),pk"`
-			Name      string    `sql:"name,text,not_null,unique,index"`
+			Name      string    `sql:"name,text,not_null,unique" sqlindex:"name"`
 			CreatedAt time.Time `sql:"created_at,timestamp,null"`
 		}
 
@@ -57,5 +56,15 @@ var _ = Describe("Schema", func() {
 		Expect(dataType).To(Equal("timestamp"))
 		Expect(notNull).To(Equal(0))
 		Expect(isPK).To(Equal(0))
+	})
+
+	Context("when the provided type is not a pointer", func() {
+		It("create table operation returns an error", func() {
+			type y struct {
+				ID string `sql:"id,varchar(50),pk"`
+			}
+
+			Expect(sqlutil.CreateTable(db, y{})).To(MatchError("Must be pointer to struct; got y"))
+		})
 	})
 })
