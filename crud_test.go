@@ -22,11 +22,24 @@ var _ = Describe("Crud", func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("queries row by primary key successfully", func() {
+		_, err := db.Exec("INSERT INTO student (id, name) VALUES('1', 'Jack')")
+		Expect(err).To(BeNil())
+
+		s := &student{ID: "1"}
+		Expect(sqlutil.QueryRow(db, s)).To(Succeed())
+		Expect(s.ID).To(Equal("1"))
+		Expect(s.Name).To(Equal("Jack"))
+	})
+
 	It("inserts user correctly", func() {
-		Expect(sqlutil.Insert(db, &student{
+		cnt, err := sqlutil.Insert(db, &student{
 			ID:   "1234",
 			Name: "Jack",
-		})).To(Succeed())
+		})
+
+		Expect(cnt).To(Equal(int64(1)))
+		Expect(err).To(BeNil())
 
 		rows, err := db.Query("SELECT id,name FROM student")
 		Expect(err).To(BeNil())
@@ -42,15 +55,21 @@ var _ = Describe("Crud", func() {
 	})
 
 	It("updates row correctly", func() {
-		Expect(sqlutil.Insert(db, &student{
+		cnt, err := sqlutil.Insert(db, &student{
 			ID:   "1234",
 			Name: "Jack",
-		})).To(Succeed())
+		})
 
-		Expect(sqlutil.Update(db, &student{
+		Expect(cnt).To(Equal(int64(1)))
+		Expect(err).To(BeNil())
+
+		cnt, err = sqlutil.Update(db, &student{
 			ID:   "1234",
 			Name: "John",
-		})).To(Succeed())
+		})
+
+		Expect(cnt).To(Equal(int64(1)))
+		Expect(err).To(BeNil())
 
 		rows, err := db.Query("SELECT id,name FROM student")
 		Expect(err).To(BeNil())
@@ -66,14 +85,20 @@ var _ = Describe("Crud", func() {
 	})
 
 	It("deletes row correctly", func() {
-		Expect(sqlutil.Insert(db, &student{
+		cnt, err := sqlutil.Insert(db, &student{
 			ID:   "1234",
 			Name: "Jack",
-		})).To(Succeed())
+		})
 
-		Expect(sqlutil.Delete(db, &student{
+		Expect(cnt).To(Equal(int64(1)))
+		Expect(err).To(BeNil())
+
+		cnt, err = sqlutil.Delete(db, &student{
 			ID: "1234",
-		})).To(Succeed())
+		})
+
+		Expect(cnt).To(Equal(int64(1)))
+		Expect(err).To(BeNil())
 
 		rows, err := db.Query("SELECT id,name FROM student")
 		Expect(err).To(BeNil())
@@ -83,16 +108,26 @@ var _ = Describe("Crud", func() {
 	})
 
 	Context("when the provided type is not a pointer", func() {
+		It("query row operation returns an error", func() {
+			err := sqlutil.QueryRow(db, student{})
+			Expect(err).To(MatchError("Must be pointer to struct; got student"))
+		})
 		It("insert operation returns an error", func() {
-			Expect(sqlutil.Insert(db, student{})).To(MatchError("Must be pointer to struct; got student"))
+			cnt, err := sqlutil.Insert(db, student{})
+			Expect(cnt).To(Equal(int64(0)))
+			Expect(err).To(MatchError("Must be pointer to struct; got student"))
 		})
 
 		It("update operation returns an error", func() {
-			Expect(sqlutil.Update(db, student{})).To(MatchError("Must be pointer to struct; got student"))
+			cnt, err := sqlutil.Update(db, student{})
+			Expect(cnt).To(Equal(int64(0)))
+			Expect(err).To(MatchError("Must be pointer to struct; got student"))
 		})
 
 		It("delete operation returns an error", func() {
-			Expect(sqlutil.Delete(db, student{})).To(MatchError("Must be pointer to struct; got student"))
+			cnt, err := sqlutil.Delete(db, student{})
+			Expect(cnt).To(Equal(int64(0)))
+			Expect(err).To(MatchError("Must be pointer to struct; got student"))
 		})
 	})
 })

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func Insert(db *sql.DB, model interface{}) error {
+func QueryRow(db *sql.DB, model interface{}) error {
 	t, err := typeOf(model)
 	if err != nil {
 		return err
@@ -15,6 +15,36 @@ func Insert(db *sql.DB, model interface{}) error {
 	schema, err := metadata.Schema(t)
 	if err != nil {
 		return err
+	}
+
+	v := valueOf(model)
+	columns := []string{}
+	values := make([]interface{}, 0)
+
+	for _, column := range schema.Columns {
+		value := v.Field(column.Index).Addr().Interface()
+		expression := fmt.Sprintf("%s = ?", column.Name)
+
+		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
+			columns = append(columns, expression)
+			values = append(values, value)
+		}
+	}
+
+	statement := fmt.Sprintf("SELECT * FROM %s WHERE %s", schema.Table, strings.Join(columns, ","))
+	row := db.QueryRow(statement, values...)
+	return Scan(&RowScanner{row}, model)
+}
+
+func Insert(db *sql.DB, model interface{}) (int64, error) {
+	t, err := typeOf(model)
+	if err != nil {
+		return 0, err
+	}
+
+	schema, err := metadata.Schema(t)
+	if err != nil {
+		return 0, err
 	}
 
 	v := valueOf(model)
@@ -30,19 +60,18 @@ func Insert(db *sql.DB, model interface{}) error {
 	}
 
 	statement := fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s)", schema.Table, strings.Join(columns, ","), strings.Join(placeholders, ","))
-	_, err = db.Exec(statement, values...)
-	return err
+	return execSQL(db, statement, values...)
 }
 
-func Update(db *sql.DB, model interface{}) error {
+func Update(db *sql.DB, model interface{}) (int64, error) {
 	t, err := typeOf(model)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	schema, err := metadata.Schema(t)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	v := valueOf(model)
@@ -65,21 +94,19 @@ func Update(db *sql.DB, model interface{}) error {
 	}
 
 	values = append(values, conditionValues...)
-
 	statement := fmt.Sprintf("UPDATE %s SET %s WHERE %s", schema.Table, strings.Join(columns, ","), strings.Join(conditions, ","))
-	_, err = db.Exec(statement, values...)
-	return err
+	return execSQL(db, statement, values...)
 }
 
-func Delete(db *sql.DB, model interface{}) error {
+func Delete(db *sql.DB, model interface{}) (int64, error) {
 	t, err := typeOf(model)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	schema, err := metadata.Schema(t)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	v := valueOf(model)
@@ -97,6 +124,19 @@ func Delete(db *sql.DB, model interface{}) error {
 	}
 
 	statement := fmt.Sprintf("DELETE FROM %s WHERE %s", schema.Table, strings.Join(columns, ","))
-	_, err = db.Exec(statement, values...)
-	return err
+	return execSQL(db, statement, values...)
+}
+
+func execSQL(db *sql.DB, statement string, values ...interface{}) (int64, error) {
+	result, err := db.Exec(statement, values...)
+	if err != nil {
+		return 0, err
+	}
+
+	cnt, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return cnt, nil
 }

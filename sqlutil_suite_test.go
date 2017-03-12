@@ -3,6 +3,7 @@ package sqlutil_test
 import (
 	"database/sql"
 	"io/ioutil"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/ginkgo"
@@ -11,7 +12,10 @@ import (
 	"testing"
 )
 
-var db *sql.DB
+var (
+	db     *sql.DB
+	dbfile string
+)
 
 func TestSqlutil(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -22,10 +26,13 @@ var _ = BeforeSuite(func() {
 	tmpfile, err := ioutil.TempFile("", "sqlutil")
 	Expect(err).To(BeNil())
 
-	db, err = sql.Open("sqlite3", tmpfile.Name())
+	dbfile = tmpfile.Name()
+
+	db, err = sql.Open("sqlite3", dbfile)
 	Expect(err).To(BeNil())
 })
 
 var _ = AfterSuite(func() {
 	Expect(db.Close()).To(Succeed())
+	Expect(os.Remove(dbfile)).To(Succeed())
 })
