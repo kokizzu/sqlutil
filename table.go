@@ -7,40 +7,36 @@ import (
 	"strings"
 )
 
-type Table struct {
-	schema *Schema
-	model  interface{}
-	t      reflect.Type
-	v      reflect.Value
+type TableEntity struct {
+	schema     *Schema
+	model      interface{}
+	modelValue reflect.Value
 }
 
-func Model(model interface{}) *Table {
-	t, err := typeOf(model)
+func Entity(model interface{}) *TableEntity {
+	typ, err := typeOf(model)
 	if err != nil {
 		panic(err)
 	}
 
-	schema, err := metadata.Schema(t)
+	schema, err := metadata.Schema(typ)
 	if err != nil {
 		panic(err)
 	}
 
-	v := valueOf(model)
-
-	return &Table{
-		model:  model,
-		t:      t,
-		v:      v,
-		schema: schema,
+	return &TableEntity{
+		model:      model,
+		modelValue: valueOf(model),
+		schema:     schema,
 	}
 }
 
-func (t *Table) QueryRow(db *sql.DB) error {
+func (t *TableEntity) QueryRow(db *sql.DB) error {
 	columns := []string{}
 	values := make([]interface{}, 0)
 
 	for _, column := range t.schema.Columns {
-		value := t.v.Field(column.Index).Addr().Interface()
+		value := t.modelValue.Field(column.Index).Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
 		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
@@ -54,13 +50,13 @@ func (t *Table) QueryRow(db *sql.DB) error {
 	return Scan(&RowScanner{row}, t.model)
 }
 
-func (t *Table) Insert(db *sql.DB) (int64, error) {
+func (t *TableEntity) Insert(db *sql.DB) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 	placeholders := []string{}
 
 	for _, column := range t.schema.Columns {
-		value := t.v.Field(column.Index).Addr().Interface()
+		value := t.modelValue.Field(column.Index).Addr().Interface()
 		values = append(values, value)
 		columns = append(columns, column.Name)
 		placeholders = append(placeholders, "?")
@@ -70,14 +66,14 @@ func (t *Table) Insert(db *sql.DB) (int64, error) {
 	return execSQL(db, statement, values...)
 }
 
-func (t *Table) Update(db *sql.DB) (int64, error) {
+func (t *TableEntity) Update(db *sql.DB) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 	conditionValues := make([]interface{}, 0)
 	conditions := []string{}
 
 	for _, column := range t.schema.Columns {
-		value := t.v.Field(column.Index).Addr().Interface()
+		value := t.modelValue.Field(column.Index).Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
 		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
@@ -94,12 +90,12 @@ func (t *Table) Update(db *sql.DB) (int64, error) {
 	return execSQL(db, statement, values...)
 }
 
-func (t *Table) Delete(db *sql.DB) (int64, error) {
+func (t *TableEntity) Delete(db *sql.DB) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 
 	for _, column := range t.schema.Columns {
-		value := t.v.Field(column.Index).Addr().Interface()
+		value := t.modelValue.Field(column.Index).Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
 		if column.Constraint&ColumnConstraintPrimaryKey != 0 {

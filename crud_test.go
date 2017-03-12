@@ -109,7 +109,7 @@ var _ = Describe("Crud", func() {
 
 	Context("when the provided type is not a pointer", func() {
 		It("should panic", func() {
-			Expect(func() { sqlutil.Model(student{}) }).To(Panic())
+			Expect(func() { sqlutil.Entity(student{}) }).To(Panic())
 		})
 	})
 })
