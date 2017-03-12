@@ -18,6 +18,20 @@ func Delete(db *sql.DB, model interface{}) (int64, error) {
 	return Entity(model).Delete(db)
 }
 
+func mergeFields(fields []Fields) (Fields, bool) {
+	allFields := Fields{}
+	merged := false
+
+	for _, f := range fields {
+		for key, value := range f {
+			allFields[key] = value
+			merged = true
+		}
+	}
+
+	return allFields, merged
+}
+
 func execSQL(db *sql.DB, statement string, values ...interface{}) (int64, error) {
 	result, err := db.Exec(statement, values...)
 	if err != nil {

@@ -84,6 +84,40 @@ var _ = Describe("TableEntity", func() {
 		Expect(record.Name).To(Equal("John"))
 	})
 
+	Context("when the update fields are provided", func() {
+		It("updates only the provided fields", func() {
+			cnt, err := sqlutil.Entity(&student{
+				ID:   "1234",
+				Name: "Jack",
+			}).Insert(db)
+
+			Expect(cnt).To(Equal(int64(1)))
+			Expect(err).To(BeNil())
+
+			cnt, err = sqlutil.Entity(&student{
+				ID:   "1234",
+				Name: "Peter",
+			}).Update(db, sqlutil.Fields{
+				"name": "Smith",
+			})
+
+			Expect(cnt).To(Equal(int64(1)))
+			Expect(err).To(BeNil())
+
+			rows, err := db.Query("SELECT id,name FROM student")
+			Expect(err).To(BeNil())
+			defer rows.Close()
+
+			Expect(rows.Next()).To(BeTrue())
+
+			record := student{}
+
+			Expect(sqlutil.Entity(&record).Scan(rows)).To(Succeed())
+			Expect(record.ID).To(Equal("1234"))
+			Expect(record.Name).To(Equal("Smith"))
+		})
+	})
+
 	It("deletes row correctly", func() {
 		cnt, err := sqlutil.Entity(&student{
 			ID:   "1234",

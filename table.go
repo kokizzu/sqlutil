@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+type Fields map[string]interface{}
+
 type TableEntity struct {
 	schema     *Schema
 	modelValue reflect.Value
@@ -96,11 +98,12 @@ func (t *TableEntity) Insert(db *sql.DB) (int64, error) {
 	return execSQL(db, statement, values...)
 }
 
-func (t *TableEntity) Update(db *sql.DB) (int64, error) {
+func (t *TableEntity) Update(db *sql.DB, fields ...Fields) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 	conditionValues := make([]interface{}, 0)
 	conditions := []string{}
+	allFields, merged := mergeFields(fields)
 
 	for _, column := range t.schema.Columns {
 		value := t.modelValue.Field(column.Index).Addr().Interface()
@@ -109,10 +112,18 @@ func (t *TableEntity) Update(db *sql.DB) (int64, error) {
 		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
 			conditions = append(conditions, expression)
 			conditionValues = append(values, value)
-		} else {
-			columns = append(columns, expression)
-			values = append(values, value)
+			continue
 		}
+
+		if merged {
+			ok := false
+			if value, ok = allFields[column.Name]; !ok {
+				continue
+			}
+		}
+
+		columns = append(columns, expression)
+		values = append(values, value)
 	}
 
 	values = append(values, conditionValues...)
