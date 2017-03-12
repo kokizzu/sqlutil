@@ -9,7 +9,6 @@ import (
 
 type TableEntity struct {
 	schema     *Schema
-	model      interface{}
 	modelValue reflect.Value
 }
 
@@ -25,10 +24,41 @@ func Entity(model interface{}) *TableEntity {
 	}
 
 	return &TableEntity{
-		model:      model,
 		modelValue: valueOf(model),
 		schema:     schema,
 	}
+}
+
+func (t *TableEntity) Scan(scanner Scanner) error {
+	columns, err := scanner.Columns()
+	if err != nil {
+		return err
+	}
+
+	add := len(columns) == 0
+
+	mapping := make(map[string]int)
+	for _, c := range t.schema.Columns {
+		mapping[c.Name] = c.Index
+		if add {
+			columns = append(columns, c.Name)
+		}
+	}
+
+	values := make([]interface{}, 0)
+	var value interface{}
+
+	for _, column := range columns {
+		if idx, ok := mapping[column]; ok {
+			value = t.modelValue.Field(idx).Addr().Interface()
+		} else {
+			value = &sql.RawBytes{}
+		}
+
+		values = append(values, value)
+	}
+
+	return scanner.Scan(values...)
 }
 
 func (t *TableEntity) QueryRow(db *sql.DB) error {
@@ -47,7 +77,7 @@ func (t *TableEntity) QueryRow(db *sql.DB) error {
 
 	statement := fmt.Sprintf("SELECT * FROM %s WHERE %s", t.schema.Table, strings.Join(columns, ","))
 	row := db.QueryRow(statement, values...)
-	return Scan(&RowScanner{row}, t.model)
+	return t.Scan(&RowScanner{row})
 }
 
 func (t *TableEntity) Insert(db *sql.DB) (int64, error) {

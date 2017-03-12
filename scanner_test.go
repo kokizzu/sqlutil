@@ -46,7 +46,7 @@ var _ = Describe("Scanner", func() {
 
 			Expect(rows.Next()).To(BeTrue())
 
-			Expect(sqlutil.Scan(rows, student{})).To(MatchError("Must be pointer to struct; got student"))
+			Expect(func() { sqlutil.Scan(rows, student{}) }).To(Panic())
 		})
 	})
 })

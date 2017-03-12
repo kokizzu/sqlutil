@@ -20,45 +20,5 @@ type Scanner interface {
 }
 
 func Scan(scanner Scanner, model interface{}) error {
-	t, err := typeOf(model)
-	if err != nil {
-		return err
-	}
-
-	v := valueOf(model)
-
-	schema, err := metadata.Schema(t)
-	if err != nil {
-		return err
-	}
-
-	columns, err := scanner.Columns()
-	if err != nil {
-		return err
-	}
-
-	add := len(columns) == 0
-
-	mapping := make(map[string]int)
-	for _, c := range schema.Columns {
-		mapping[c.Name] = c.Index
-		if add {
-			columns = append(columns, c.Name)
-		}
-	}
-
-	values := make([]interface{}, 0)
-	var value interface{}
-
-	for _, column := range columns {
-		if idx, ok := mapping[column]; ok {
-			value = v.Field(idx).Addr().Interface()
-		} else {
-			value = &sql.RawBytes{}
-		}
-
-		values = append(values, value)
-	}
-
-	return scanner.Scan(values...)
+	return Entity(model).Scan(scanner)
 }
