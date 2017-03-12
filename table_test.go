@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Crud", func() {
+var _ = Describe("TableEntity", func() {
 	type student struct {
 		ID   string `sql:"id,varchar(50),pk"`
 		Name string `sql:"name,text"`
@@ -27,16 +27,16 @@ var _ = Describe("Crud", func() {
 		Expect(err).To(BeNil())
 
 		s := &student{ID: "1"}
-		Expect(sqlutil.QueryRow(db, s)).To(Succeed())
+		Expect(sqlutil.Entity(s).QueryRow(db)).To(Succeed())
 		Expect(s.ID).To(Equal("1"))
 		Expect(s.Name).To(Equal("Jack"))
 	})
 
 	It("inserts user correctly", func() {
-		cnt, err := sqlutil.Insert(db, &student{
+		cnt, err := sqlutil.Entity(&student{
 			ID:   "1234",
 			Name: "Jack",
-		})
+		}).Insert(db)
 
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
@@ -49,24 +49,24 @@ var _ = Describe("Crud", func() {
 
 		record := student{}
 
-		Expect(sqlutil.Scan(rows, &record)).To(Succeed())
+		Expect(sqlutil.Entity(&record).Scan(rows)).To(Succeed())
 		Expect(record.ID).To(Equal("1234"))
 		Expect(record.Name).To(Equal("Jack"))
 	})
 
 	It("updates row correctly", func() {
-		cnt, err := sqlutil.Insert(db, &student{
+		cnt, err := sqlutil.Entity(&student{
 			ID:   "1234",
 			Name: "Jack",
-		})
+		}).Insert(db)
 
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
 
-		cnt, err = sqlutil.Update(db, &student{
+		cnt, err = sqlutil.Entity(&student{
 			ID:   "1234",
 			Name: "John",
-		})
+		}).Update(db)
 
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
@@ -79,23 +79,23 @@ var _ = Describe("Crud", func() {
 
 		record := student{}
 
-		Expect(sqlutil.Scan(rows, &record)).To(Succeed())
+		Expect(sqlutil.Entity(&record).Scan(rows)).To(Succeed())
 		Expect(record.ID).To(Equal("1234"))
 		Expect(record.Name).To(Equal("John"))
 	})
 
 	It("deletes row correctly", func() {
-		cnt, err := sqlutil.Insert(db, &student{
+		cnt, err := sqlutil.Entity(&student{
 			ID:   "1234",
 			Name: "Jack",
-		})
+		}).Insert(db)
 
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
 
-		cnt, err = sqlutil.Delete(db, &student{
+		cnt, err = sqlutil.Entity(&student{
 			ID: "1234",
-		})
+		}).Delete(db)
 
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
