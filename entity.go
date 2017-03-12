@@ -5,16 +5,22 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
+)
+
+const (
+	FieldCreatedAt = "created_at"
+	FieldUpdatedAt = "updated_at"
 )
 
 type Fields map[string]interface{}
 
-type TableEntity struct {
+type EntityContext struct {
 	schema     *Schema
 	modelValue reflect.Value
 }
 
-func Entity(model interface{}) *TableEntity {
+func Entity(model interface{}) *EntityContext {
 	typ, err := typeOf(model)
 	if err != nil {
 		panic(err)
@@ -25,13 +31,13 @@ func Entity(model interface{}) *TableEntity {
 		panic(err)
 	}
 
-	return &TableEntity{
+	return &EntityContext{
 		modelValue: valueOf(model),
 		schema:     schema,
 	}
 }
 
-func (t *TableEntity) Scan(scanner Scanner) error {
+func (t *EntityContext) Scan(scanner Scanner) error {
 	columns, err := scanner.Columns()
 	if err != nil {
 		return err
@@ -63,7 +69,7 @@ func (t *TableEntity) Scan(scanner Scanner) error {
 	return scanner.Scan(values...)
 }
 
-func (t *TableEntity) QueryRow(db *sql.DB) error {
+func (t *EntityContext) QueryRow(db *sql.DB) error {
 	columns := []string{}
 	values := make([]interface{}, 0)
 
@@ -82,13 +88,19 @@ func (t *TableEntity) QueryRow(db *sql.DB) error {
 	return t.Scan(&RowScanner{row})
 }
 
-func (t *TableEntity) Insert(db *sql.DB) (int64, error) {
+func (t *EntityContext) Insert(db *sql.DB) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 	placeholders := []string{}
+	now := reflect.ValueOf(time.Now())
 
 	for _, column := range t.schema.Columns {
-		value := t.modelValue.Field(column.Index).Addr().Interface()
+		field := t.modelValue.Field(column.Index)
+		if column.Name == FieldCreatedAt || column.Name == FieldUpdatedAt {
+			field.Set(now)
+		}
+
+		value := field.Addr().Interface()
 		values = append(values, value)
 		columns = append(columns, column.Name)
 		placeholders = append(placeholders, "?")
@@ -98,15 +110,21 @@ func (t *TableEntity) Insert(db *sql.DB) (int64, error) {
 	return execSQL(db, statement, values...)
 }
 
-func (t *TableEntity) Update(db *sql.DB, fields ...Fields) (int64, error) {
+func (t *EntityContext) Update(db *sql.DB, fields ...Fields) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 	conditionValues := make([]interface{}, 0)
 	conditions := []string{}
 	allFields, merged := mergeFields(fields)
+	now := reflect.ValueOf(time.Now())
 
 	for _, column := range t.schema.Columns {
-		value := t.modelValue.Field(column.Index).Addr().Interface()
+		field := t.modelValue.Field(column.Index)
+		if column.Name == FieldUpdatedAt {
+			field.Set(now)
+		}
+
+		value := field.Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
 		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
@@ -131,7 +149,7 @@ func (t *TableEntity) Update(db *sql.DB, fields ...Fields) (int64, error) {
 	return execSQL(db, statement, values...)
 }
 
-func (t *TableEntity) Delete(db *sql.DB) (int64, error) {
+func (t *EntityContext) Delete(db *sql.DB) (int64, error) {
 	columns := []string{}
 	values := make([]interface{}, 0)
 
