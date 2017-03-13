@@ -3,19 +3,19 @@ package sqlutil
 import "database/sql"
 
 func QueryRow(db *sql.DB, model interface{}) error {
-	return Entity(model).QueryRow(db)
+	return NewEntityContext(model).QueryRow(db)
 }
 
 func Insert(db *sql.DB, model interface{}) (int64, error) {
-	return Entity(model).Insert(db)
+	return NewEntityContext(model).Insert(db)
 }
 
 func Update(db *sql.DB, model interface{}) (int64, error) {
-	return Entity(model).Update(db)
+	return NewEntityContext(model).Update(db)
 }
 
 func Delete(db *sql.DB, model interface{}) (int64, error) {
-	return Entity(model).Delete(db)
+	return NewEntityContext(model).Delete(db)
 }
 
 func mergeFields(fields []Fields) (Fields, bool) {

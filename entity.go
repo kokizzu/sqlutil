@@ -20,7 +20,7 @@ type EntityContext struct {
 	modelValue reflect.Value
 }
 
-func Entity(model interface{}) *EntityContext {
+func NewEntityContext(model interface{}) *EntityContext {
 	typ, err := typeOf(model)
 	if err != nil {
 		panic(err)

@@ -31,7 +31,7 @@ var _ = Describe("Entity", func() {
 		Expect(err).To(BeNil())
 
 		s := &student{ID: "1"}
-		Expect(sqlutil.Entity(s).QueryRow(db)).To(Succeed())
+		Expect(sqlutil.NewEntityContext(s).QueryRow(db)).To(Succeed())
 		Expect(s.ID).To(Equal("1"))
 		Expect(s.Name).To(Equal("Jack"))
 	})
@@ -42,7 +42,7 @@ var _ = Describe("Entity", func() {
 			Name: "Jack",
 		}
 
-		cnt, err := sqlutil.Entity(s).Insert(db)
+		cnt, err := sqlutil.NewEntityContext(s).Insert(db)
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
 		Expect(s.CreatedAt).NotTo(Equal(time.Time{}))
@@ -59,7 +59,7 @@ var _ = Describe("Entity", func() {
 
 		record := student{}
 
-		Expect(sqlutil.Entity(&record).Scan(rows)).To(Succeed())
+		Expect(sqlutil.NewEntityContext(&record).Scan(rows)).To(Succeed())
 		Expect(record.ID).To(Equal("1234"))
 		Expect(record.Name).To(Equal("Jack"))
 		Expect(record.CreatedAt).NotTo(Equal(time.Time{}))
@@ -72,14 +72,14 @@ var _ = Describe("Entity", func() {
 			ID:   "1234",
 			Name: "Jack",
 		}
-		cnt, err := sqlutil.Entity(s).Insert(db)
+		cnt, err := sqlutil.NewEntityContext(s).Insert(db)
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
 		Expect(s.CreatedAt).NotTo(Equal(time.Time{}))
 		Expect(s.UpdatedAt).To(BeTemporally("==", s.CreatedAt))
 
 		s.Name = "John"
-		cnt, err = sqlutil.Entity(s).Update(db)
+		cnt, err = sqlutil.NewEntityContext(s).Update(db)
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
 		Expect(s.CreatedAt).NotTo(Equal(time.Time{}))
@@ -95,14 +95,14 @@ var _ = Describe("Entity", func() {
 
 		record := student{}
 
-		Expect(sqlutil.Entity(&record).Scan(rows)).To(Succeed())
+		Expect(sqlutil.NewEntityContext(&record).Scan(rows)).To(Succeed())
 		Expect(record.ID).To(Equal("1234"))
 		Expect(record.Name).To(Equal("John"))
 	})
 
 	Context("when the update fields are provided", func() {
 		It("updates only the provided fields", func() {
-			cnt, err := sqlutil.Entity(&student{
+			cnt, err := sqlutil.NewEntityContext(&student{
 				ID:   "1234",
 				Name: "Jack",
 			}).Insert(db)
@@ -110,7 +110,7 @@ var _ = Describe("Entity", func() {
 			Expect(cnt).To(Equal(int64(1)))
 			Expect(err).To(BeNil())
 
-			cnt, err = sqlutil.Entity(&student{
+			cnt, err = sqlutil.NewEntityContext(&student{
 				ID:   "1234",
 				Name: "Peter",
 			}).Update(db, sqlutil.Fields{
@@ -130,14 +130,14 @@ var _ = Describe("Entity", func() {
 
 			record := student{}
 
-			Expect(sqlutil.Entity(&record).Scan(rows)).To(Succeed())
+			Expect(sqlutil.NewEntityContext(&record).Scan(rows)).To(Succeed())
 			Expect(record.ID).To(Equal("1234"))
 			Expect(record.Name).To(Equal("Smith"))
 		})
 	})
 
 	It("deletes row correctly", func() {
-		cnt, err := sqlutil.Entity(&student{
+		cnt, err := sqlutil.NewEntityContext(&student{
 			ID:   "1234",
 			Name: "Jack",
 		}).Insert(db)
@@ -145,7 +145,7 @@ var _ = Describe("Entity", func() {
 		Expect(cnt).To(Equal(int64(1)))
 		Expect(err).To(BeNil())
 
-		cnt, err = sqlutil.Entity(&student{
+		cnt, err = sqlutil.NewEntityContext(&student{
 			ID: "1234",
 		}).Delete(db)
 
@@ -163,7 +163,7 @@ var _ = Describe("Entity", func() {
 
 	Context("when the provided type is not a pointer", func() {
 		It("should panic", func() {
-			Expect(func() { sqlutil.Entity(student{}) }).To(Panic())
+			Expect(func() { sqlutil.NewEntityContext(student{}) }).To(Panic())
 		})
 	})
 })

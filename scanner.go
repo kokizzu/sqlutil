@@ -20,5 +20,5 @@ type Scanner interface {
 }
 
 func Scan(scanner Scanner, model interface{}) error {
-	return Entity(model).Scan(scanner)
+	return NewEntityContext(model).Scan(scanner)
 }
