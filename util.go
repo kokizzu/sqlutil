@@ -10,8 +10,8 @@ func Insert(db *sql.DB, model interface{}) (int64, error) {
 	return NewEntityContext(model).Insert(db)
 }
 
-func Update(db *sql.DB, model interface{}) (int64, error) {
-	return NewEntityContext(model).Update(db)
+func Update(db *sql.DB, model interface{}, fields ...Fields) (int64, error) {
+	return NewEntityContext(model).Update(db, fields...)
 }
 
 func Delete(db *sql.DB, model interface{}) (int64, error) {
