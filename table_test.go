@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Schema", func() {
+var _ = Describe("Table", func() {
 	AfterEach(func() {
 		db.Exec("drop table m")
 	})
