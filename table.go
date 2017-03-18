@@ -32,6 +32,14 @@ func CreateTable(db *sql.DB, model interface{}) error {
 	}
 
 	definitions = append(definitions, fmt.Sprintf(" CONSTRAINT %s_pk PRIMARY KEY(%s)", schema.Table, strings.Join(tablePK, Separator)))
+
+	for _, fk := range schema.ForeignKeys {
+		definitions = append(definitions, fmt.Sprintf(" FOREIGN KEY (%s) REFERENCES %s (%s)",
+			strings.Join(fk.Columns, Separator),
+			fk.ReferenceTable,
+			strings.Join(fk.ReferenceTableColumns, Separator)))
+	}
+
 	statement := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n%s\n)", schema.Table, strings.Join(definitions, Separator))
 
 	if _, err = db.Exec(statement); err != nil {

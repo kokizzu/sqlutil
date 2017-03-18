@@ -9,9 +9,16 @@ const (
 )
 
 type Schema struct {
-	Table   string
-	Columns []*Column
-	Indexes []*Index
+	Table       string
+	ForeignKeys []*ForeignKey
+	Columns     []*Column
+	Indexes     []*Index
+}
+
+type ForeignKey struct {
+	Columns               []string
+	ReferenceTable        string
+	ReferenceTableColumns []string
 }
 
 type Column struct {

@@ -24,9 +24,9 @@ var _ = Describe("Metadata", func() {
 
 	It("retrieves the fields information", func() {
 		type m struct {
-			ID        string    `sql:"id,varchar(50),pk,not_null,unique" sqlindex:"search"`
-			Name      string    `sql:"name,text,not_null,unique" sqlindex:"name_idx"`
-			CreatedAt time.Time `sql:"created_at,timestamp,null"`
+			ID        string    `sql:"id,varchar(50),pk,not_null,unique" sqlindex:"search" sqlforeignkey:"table1(a)"`
+			Name      string    `sql:"name,text,not_null,unique" sqlindex:"name_idx" sqlforeignkey:"table1(b)"`
+			CreatedAt time.Time `sql:"created_at,timestamp,null" sqlforeignkey:"table2(c)"`
 			RefId     int       `sql:"ref_id,integer" sqlindex:"search" sqlindex:"ref_id"`
 			IgnoreMe  string    `sql:"-"`
 		}
@@ -69,6 +69,23 @@ var _ = Describe("Metadata", func() {
 		Expect(indexes[1].Name).To(Equal("name_idx"))
 		Expect(indexes[1].Columns).To(HaveLen(1))
 		Expect(indexes[1].Columns).To(ContainElement("name"))
+
+		fk := schema.ForeignKeys
+		Expect(fk).To(HaveLen(2))
+
+		Expect(fk[0].Columns).To(HaveLen(2))
+		Expect(fk[0].Columns).To(ContainElement("id"))
+		Expect(fk[0].Columns).To(ContainElement("name"))
+		Expect(fk[0].ReferenceTable).To(Equal("table1"))
+		Expect(fk[0].ReferenceTableColumns).To(HaveLen(2))
+		Expect(fk[0].ReferenceTableColumns).To(ContainElement("a"))
+		Expect(fk[0].ReferenceTableColumns).To(ContainElement("b"))
+
+		Expect(fk[1].Columns).To(HaveLen(1))
+		Expect(fk[1].Columns).To(ContainElement("created_at"))
+		Expect(fk[1].ReferenceTable).To(Equal("table2"))
+		Expect(fk[1].ReferenceTableColumns).To(HaveLen(1))
+		Expect(fk[1].ReferenceTableColumns).To(ContainElement("c"))
 
 		Expect(indexes[2].Name).To(Equal("ref_id"))
 		Expect(indexes[2].Columns).To(HaveLen(1))

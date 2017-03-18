@@ -3,12 +3,14 @@ package sqlutil
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
 var (
-	metadata        *Metadata
-	ignoredFieldErr error = fmt.Errorf("Field is ignored")
+	metadata         *Metadata
+	ignoredFieldErr  error = fmt.Errorf("Field is ignored")
+	foreignKeyRegexp       = regexp.MustCompile(`([\w]+)\(([\w]+)\)`)
 )
 
 func init() {
@@ -38,9 +40,10 @@ func (m *Metadata) Schema(t reflect.Type) (*Schema, error) {
 	}
 
 	schema = &Schema{
-		Table:   strings.ToLower(t.Name()),
-		Columns: []*Column{},
-		Indexes: []*Index{},
+		Table:       strings.ToLower(t.Name()),
+		ForeignKeys: []*ForeignKey{},
+		Columns:     []*Column{},
+		Indexes:     []*Index{},
 	}
 
 	m.info[t] = schema
@@ -64,6 +67,7 @@ func (m *Metadata) Schema(t reflect.Type) (*Schema, error) {
 		}
 
 		m.index(schema, column, field)
+		m.foreignKey(schema, column, field)
 
 		schema.Columns = append(schema.Columns, column)
 	}
@@ -110,6 +114,39 @@ func (m *Metadata) constraints(meta string) ColumnConstraint {
 		return ColumnConstraintNull
 	default:
 		return ColumnConstraint(0)
+	}
+}
+
+func (m *Metadata) foreignKey(schema *Schema, column *Column, field reflect.StructField) {
+	tag := Tag(field.Tag)
+
+	for _, fkTag := range tag.Get(TagForeignKeyName) {
+		found := false
+
+		matches := foreignKeyRegexp.FindStringSubmatch(fkTag)
+		if len(matches) < 3 {
+			continue
+		}
+
+		referenceTable := matches[1]
+		referenceColumn := matches[2]
+
+		for _, fk := range schema.ForeignKeys {
+			if fk.ReferenceTable == referenceTable {
+				fk.ReferenceTableColumns = append(fk.ReferenceTableColumns, referenceColumn)
+				fk.Columns = append(fk.Columns, column.Name)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			schema.ForeignKeys = append(schema.ForeignKeys, &ForeignKey{
+				ReferenceTable:        referenceTable,
+				ReferenceTableColumns: []string{referenceColumn},
+				Columns:               []string{column.Name},
+			})
+		}
 	}
 }
 

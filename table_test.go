@@ -10,22 +10,27 @@ import (
 )
 
 var _ = Describe("Table", func() {
-	AfterEach(func() {
-		db.Exec("drop table m")
-	})
-
 	It("creates a table successfully", func() {
 		type m struct {
 			ID        string    `sql:"id,varchar(50),pk"`
-			Name      string    `sql:"name,text,not_null,unique" sqlindex:"name"`
+			Name      string    `sql:"name,text,not_null,unique" sqlindex:"m_name"`
 			CreatedAt time.Time `sql:"created_at,timestamp,null"`
 		}
 
+		type n struct {
+			ID       string `sql:"id,varchar(50),pk"`
+			Name     string `sql:"name,text,not_null,unique" sqlindex:"n_name"`
+			ParentID string `sql:"parent_id,varchar(50)" sqlforeignkey:"m(id)"`
+		}
+
 		Expect(sqlutil.CreateTable(db, &m{})).To(Succeed())
+		Expect(sqlutil.CreateTable(db, &n{})).To(Succeed())
 
 		rows, err := db.Query("pragma table_info(m)")
 		Expect(err).To(BeNil())
-		defer rows.Close()
+		defer func() {
+			Expect(rows.Close()).To(Succeed())
+		}()
 
 		var (
 			no           int
