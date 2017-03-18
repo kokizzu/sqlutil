@@ -26,7 +26,7 @@ func CreateTable(db *sql.DB, model interface{}) error {
 		definition := strings.TrimRight(fmt.Sprintf(" %s %s %s", column.Name, column.DataType, column.Constraint.String()), " ")
 		definitions = append(definitions, definition)
 
-		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
+		if column.PrimaryKey {
 			tablePK = append(tablePK, column.Name)
 		}
 	}

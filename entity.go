@@ -77,7 +77,7 @@ func (t *EntityContext) QueryRow(db *sql.DB) error {
 		value := t.modelValue.Field(column.Index).Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
-		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
+		if column.PrimaryKey {
 			columns = append(columns, expression)
 			values = append(values, value)
 		}
@@ -127,7 +127,7 @@ func (t *EntityContext) Update(db *sql.DB, fields ...Fields) (int64, error) {
 		value := field.Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
-		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
+		if column.PrimaryKey {
 			conditions = append(conditions, expression)
 			conditionValues = append(values, value)
 			continue
@@ -157,7 +157,7 @@ func (t *EntityContext) Delete(db *sql.DB) (int64, error) {
 		value := t.modelValue.Field(column.Index).Addr().Interface()
 		expression := fmt.Sprintf("%s = ?", column.Name)
 
-		if column.Constraint&ColumnConstraintPrimaryKey != 0 {
+		if column.PrimaryKey {
 			columns = append(columns, expression)
 			values = append(values, value)
 		}

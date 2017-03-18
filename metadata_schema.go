@@ -3,8 +3,7 @@ package sqlutil
 import "strings"
 
 const (
-	ColumnConstraintPrimaryKey ColumnConstraint = 1 << iota
-	ColumnConstraintUnique
+	ColumnConstraintUnique ColumnConstraint = 1 << iota
 	ColumnConstraintNull
 	ColumnConstraintNotNull
 )
@@ -19,6 +18,7 @@ type Column struct {
 	Name       string
 	Index      int
 	DataType   string
+	PrimaryKey bool
 	Constraint ColumnConstraint
 }
 

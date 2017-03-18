@@ -18,54 +18,10 @@ func init() {
 const (
 	TagColumnName         = "sql"
 	TagIndexName          = "sqlindex"
+	TagForeignKeyName     = "sqlforeignkey"
 	TagFieldNameIndex     = 0
 	TagFieldDataTypeIndex = 1
 )
-
-type ColumnConstraint byte
-
-func (c ColumnConstraint) String() string {
-	constraints := []string{}
-
-	if c&ColumnConstraintUnique != 0 {
-		constraints = append(constraints, "UNIQUE")
-	}
-
-	if c&ColumnConstraintNull != 0 {
-		constraints = append(constraints, "NULL")
-	}
-
-	if c&ColumnConstraintNotNull != 0 {
-		constraints = append(constraints, "NOT NULL")
-	}
-
-	return strings.Join(constraints, " ")
-}
-
-const (
-	ColumnConstraintPrimaryKey ColumnConstraint = 1 << iota
-	ColumnConstraintUnique
-	ColumnConstraintNull
-	ColumnConstraintNotNull
-)
-
-type Schema struct {
-	Table   string
-	Columns []*Column
-	Indexes []*Index
-}
-
-type Column struct {
-	Name       string
-	Index      int
-	DataType   string
-	Constraint ColumnConstraint
-}
-
-type Index struct {
-	Name    string
-	Columns []string
-}
 
 type Metadata struct {
 	info map[reflect.Type]*Schema
@@ -127,13 +83,17 @@ func (m *Metadata) column(column *Column, field reflect.StructField) error {
 	}
 
 	for index, meta := range strings.Split(columnTag, ",") {
-		switch index {
-		case TagFieldNameIndex:
-			column.Name = meta
-		case TagFieldDataTypeIndex:
-			column.DataType = meta
-		default:
-			column.Constraint |= m.constraints(meta)
+		if meta == "pk" {
+			column.PrimaryKey = true
+		} else {
+			switch index {
+			case TagFieldNameIndex:
+				column.Name = meta
+			case TagFieldDataTypeIndex:
+				column.DataType = meta
+			default:
+				column.Constraint |= m.constraints(meta)
+			}
 		}
 	}
 
@@ -142,8 +102,6 @@ func (m *Metadata) column(column *Column, field reflect.StructField) error {
 
 func (m *Metadata) constraints(meta string) ColumnConstraint {
 	switch meta {
-	case "pk":
-		return ColumnConstraintPrimaryKey
 	case "unique":
 		return ColumnConstraintUnique
 	case "not_null":
